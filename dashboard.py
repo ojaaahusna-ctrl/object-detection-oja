@@ -6,20 +6,14 @@ import numpy as np
 from PIL import Image
 import cv2
 
-# ==========================
-# Load Models
-# ==========================
 @st.cache_resource
 def load_models():
-    yolo_model = YOLO("model/best.pt")  # Model deteksi objek
-    classifier = tf.keras.models.load_model("model/Raudhatul Husna_laporan2.h5")  # Model klasifikasi
+    yolo_model = YOLO("model/best.pt")
+    classifier = tf.keras.models.load_model("model/Raudhatul_Husna_laporan2.keras")  # gunakan format .keras
     return yolo_model, classifier
 
 yolo_model, classifier = load_models()
 
-# ==========================
-# UI
-# ==========================
 st.title("🧠 Image Classification & Object Detection App")
 
 menu = st.sidebar.selectbox("Pilih Mode:", ["Deteksi Objek (YOLO)", "Klasifikasi Gambar"])
