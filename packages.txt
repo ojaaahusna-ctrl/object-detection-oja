@@ -3,5 +3,5 @@ pillow
 numpy==1.26.4
 h5py==3.10.0
 opencv-python==4.9.0.80
-tensorflow==2.17.0 
+tensorflow-cpu==2.17.0
 ultralytics==8.2.76
