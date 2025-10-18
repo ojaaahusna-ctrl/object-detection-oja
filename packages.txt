@@ -1,4 +1,7 @@
-libgomp1
-libsm6
-libxext6
-libxrender1
+streamlit==1.36.0
+pillow
+numpy==1.26.4
+h5py==3.10.0
+opencv-python==4.9.0.80
+tensorflow==2.18.0  
+ultralytics==8.2.76
