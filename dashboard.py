@@ -11,21 +11,9 @@ import cv2
 # ==========================
 @st.cache_resource
 def load_models():
-    try:
-        yolo_model = YOLO("model/best.pt")
-    except Exception as e:
-        st.error(f"Gagal memuat model YOLO: {e}")
-        yolo_model = None
-
-    try:
-        # Ganti .h5 ke .keras kalau kamu sudah konversi
-        classifier = tf.keras.models.load_model("model/Raudhatul_Husna_laporan2.h5")
-    except Exception as e:
-        st.error(f"Gagal memuat model klasifikasi: {e}")
-        classifier = None
-
+    yolo_model = YOLO("model/best.pt")  # Model deteksi objek
+    classifier = tf.keras.models.load_model("model/Raudhatul Husna_laporan2.h5")  # Model klasifikasi
     return yolo_model, classifier
-
 
 yolo_model, classifier = load_models()
 
@@ -43,23 +31,20 @@ if uploaded_file is not None:
     st.image(img, caption="Gambar yang Diupload", use_container_width=True)
 
     if menu == "Deteksi Objek (YOLO)":
-        if yolo_model is not None:
-            results = yolo_model(img)
-            result_img = results[0].plot()
-            st.image(result_img, caption="Hasil Deteksi", use_container_width=True)
-        else:
-            st.warning("Model YOLO belum dimuat.")
+        # Deteksi objek
+        results = yolo_model(img)
+        result_img = results[0].plot()  # hasil deteksi (gambar dengan box)
+        st.image(result_img, caption="Hasil Deteksi", use_container_width=True)
 
     elif menu == "Klasifikasi Gambar":
-        if classifier is not None:
-            img_resized = img.resize((224, 224))
-            img_array = image.img_to_array(img_resized)
-            img_array = np.expand_dims(img_array, axis=0)
-            img_array = img_array / 255.0
+        # Preprocessing
+        img_resized = img.resize((224, 224))  # sesuaikan ukuran dengan model kamu
+        img_array = image.img_to_array(img_resized)
+        img_array = np.expand_dims(img_array, axis=0)
+        img_array = img_array / 255.0
 
-            prediction = classifier.predict(img_array)
-            class_index = np.argmax(prediction)
-            st.write("### Hasil Prediksi:", class_index)
-            st.write("Probabilitas:", np.max(prediction))
-        else:
-            st.warning("Model klasifikasi belum dimuat.")
+        # Prediksi
+        prediction = classifier.predict(img_array)
+        class_index = np.argmax(prediction)
+        st.write("### Hasil Prediksi:", class_index)
+        st.write("Probabilitas:", np.max(prediction))
