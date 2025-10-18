@@ -7,21 +7,34 @@ from PIL import Image
 import cv2
 
 # --- Konfigurasi ---
-# GANTI INI dengan label kelas Anda yang sebenarnya
+# GANTI INI dengan label kelas Anda yang sebenarnya, sesuai urutan indeks model
 CLASS_NAMES = ["Kardus", "Kertas", "Plastik", "Kaleng", "Lain-lain"] 
-TARGET_SIZE = (224, 224) # Ukuran input model klasifikasi
+TARGET_SIZE = (224, 224) # Ukuran input model klasifikasi Anda
 
-# ==========================
+# ===============================================
 # Load Models (Menggunakan st.cache_resource)
-# ==========================
+# ===============================================
 @st.cache_resource
 def load_models():
-    # ... (inisialisasi yolo_model dan classifier) ...
+    # Inisialisasi variabel di awal untuk menghindari NameError jika salah satu gagal
+    yolo_model = None
+    classifier = None
 
-    # --- Pemuatan Model Klasifikasi ---
+    # --- Pemuatan Model YOLO (Deteksi Objek) ---
+    try:
+        st.info("Memuat model YOLO (Deteksi Objek)...")
+        # Pastikan path ini benar
+        yolo_model = YOLO("model/best.pt") 
+        st.success("Model YOLO berhasil dimuat.")
+    except Exception as e:
+        st.error(f"❌ Gagal memuat model YOLO (best.pt). Pastikan file ada di folder 'model'. Detail error: {e}")
+
+    # --- Pemuatan Model Klasifikasi (Keras/TensorFlow) ---
     try:
         st.info("Memuat model Klasifikasi...")
-        # Perbaikan untuk Invalid dtype: tuple
+        # Menggunakan compile=False dan custom_objects=None untuk mengatasi masalah 
+        # kompatibilitas versi TensorFlow dan error 'Invalid dtype: tuple'.
+        # Pastikan path ini benar
         classifier = tf.keras.models.load_model(
             "model/Raudhatul Husna_laporan2.h5", 
             custom_objects=None,
@@ -30,16 +43,15 @@ def load_models():
         st.success("Model Klasifikasi berhasil dimuat.")
     except Exception as e:
         st.error(f"❌ Gagal memuat model Klasifikasi. Detail error: {e}")
-        classifier = None
 
     return yolo_model, classifier
 
 # Panggil fungsi load_models() sekali di awal skrip
 yolo_model, classifier = load_models()
 
-# ==========================
+# ===============================================
 # UI & Main Logic
-# ==========================
+# ===============================================
 st.title("🧠 Image Classification & Object Detection App")
 st.caption("Aplikasi ini menggunakan Model YOLO untuk Deteksi Objek dan Model Keras untuk Klasifikasi Gambar.")
 
@@ -97,6 +109,7 @@ if uploaded_file is not None:
                 
                 st.write("---")
                 st.write("Detail Probabilitas:")
+                # Tampilkan probabilitas untuk setiap kelas
                 st.json({name: f"{prob * 100:.2f}%" for name, prob in zip(CLASS_NAMES, prediction[0])})
 
             except Exception as e:
