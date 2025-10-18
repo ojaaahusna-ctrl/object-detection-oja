@@ -1,7 +1,6 @@
 streamlit
-tensorflow          # Untuk memuat model .h5 (Hyena/Cheetah)
-keras               # Bagian dari tensorflow, tapi kadang perlu eksplisit
-torch               # Untuk memuat model .pt (Hot Dog/Not Hot Dog)
-torchvision         # Untuk preprocessing gambar PyTorch
-Pillow              # Untuk pengolahan gambar (PIL)
+tensorflow
+ultralytics
+pillow
+opencv-python-headless
 numpy
