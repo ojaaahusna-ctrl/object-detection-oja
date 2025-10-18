@@ -16,22 +16,12 @@ TARGET_SIZE = (224, 224) # Ukuran input model klasifikasi
 # ==========================
 @st.cache_resource
 def load_models():
-    # Inisialisasi variabel di luar blok try untuk memastikan scope yang jelas
-    yolo_model = None
-    classifier = None
-
-    # --- Pemuatan Model YOLO ---
-    try:
-        st.info("Memuat model YOLO (Deteksi Objek)...")
-        yolo_model = YOLO("model/best.pt")
-        st.success("Model YOLO berhasil dimuat.")
-    except Exception as e:
-        st.error(f"❌ Gagal memuat model YOLO (best.pt). Pastikan file ada di folder 'model'. Detail error: {e}")
+    # ... (inisialisasi yolo_model dan classifier) ...
 
     # --- Pemuatan Model Klasifikasi ---
     try:
         st.info("Memuat model Klasifikasi...")
-        # Menggunakan compile=False untuk mengatasi masalah ValueError/dtype akibat perbedaan versi TF
+        # Perbaikan untuk Invalid dtype: tuple
         classifier = tf.keras.models.load_model(
             "model/Raudhatul Husna_laporan2.h5", 
             custom_objects=None,
@@ -39,7 +29,8 @@ def load_models():
         )
         st.success("Model Klasifikasi berhasil dimuat.")
     except Exception as e:
-        st.error(f"❌ Gagal memuat model Klasifikasi. Pastikan file 'Raudhatul Husna_laporan2.h5' ada di folder 'model'. Detail error: {e}")
+        st.error(f"❌ Gagal memuat model Klasifikasi. Detail error: {e}")
+        classifier = None
 
     return yolo_model, classifier
 
