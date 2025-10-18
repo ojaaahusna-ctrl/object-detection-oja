@@ -11,8 +11,20 @@ import cv2
 # ==========================
 @st.cache_resource
 def load_models():
-    yolo_model = YOLO("model/best.pt")  # tambahkan "model/"
-    classifier = tf.keras.models.load_model("model/Raudhatul Husna_laporan2.h5") # Model Klasifikasi  # juga tambahkan "model/"
+    # ... (bagian YOLO) ...
+
+    try:
+        # Tambahkan allow_partial_load atau custom_objects
+        # Kita gunakan compile=False dan allow_partial_load=True sebagai coba-coba
+        classifier = tf.keras.models.load_model(
+            "model/Raudhatul Husna_laporan2.h5", 
+            custom_objects=None, # Mengatasi masalah custom layer/fungsi
+            compile=False        # Mengatasi masalah compilation saat perbedaan versi
+        )
+    except Exception as e:
+        st.error(f"Gagal memuat model klasifikasi: {e}")
+        classifier = None
+
     return yolo_model, classifier
 
 
