@@ -6,7 +6,8 @@ import numpy as np
 from PIL import Image
 import cv2
 
-# Definisikan nama kelas (GANTI INI dengan label kelas Anda yang sebenarnya)
+# --- Konfigurasi ---
+# GANTI INI dengan label kelas Anda yang sebenarnya
 CLASS_NAMES = ["Kardus", "Kertas", "Plastik", "Kaleng", "Lain-lain"] 
 TARGET_SIZE = (224, 224) # Ukuran input model klasifikasi
 
@@ -21,21 +22,24 @@ def load_models():
 
     # --- Pemuatan Model YOLO ---
     try:
+        st.info("Memuat model YOLO (Deteksi Objek)...")
         yolo_model = YOLO("model/best.pt")
+        st.success("Model YOLO berhasil dimuat.")
     except Exception as e:
-        st.error(f"❌ Gagal memuat model YOLO (best.pt): {e}")
+        st.error(f"❌ Gagal memuat model YOLO (best.pt). Pastikan file ada di folder 'model'. Detail error: {e}")
 
     # --- Pemuatan Model Klasifikasi ---
     try:
-        # Menggunakan custom_objects=None dan compile=False untuk mengatasi masalah 
-        # perbedaan versi TensorFlow (ValueError: Invalid dtype: tuple)
+        st.info("Memuat model Klasifikasi...")
+        # Menggunakan compile=False untuk mengatasi masalah ValueError/dtype akibat perbedaan versi TF
         classifier = tf.keras.models.load_model(
             "model/Raudhatul Husna_laporan2.h5", 
             custom_objects=None,
-            compile=False
+            compile=False 
         )
+        st.success("Model Klasifikasi berhasil dimuat.")
     except Exception as e:
-        st.error(f"❌ Gagal memuat model Klasifikasi (Raudhatul Husna_laporan2.h5): {e}")
+        st.error(f"❌ Gagal memuat model Klasifikasi. Pastikan file 'Raudhatul Husna_laporan2.h5' ada di folder 'model'. Detail error: {e}")
 
     return yolo_model, classifier
 
@@ -61,12 +65,12 @@ if uploaded_file is not None:
     # ==========================
     if menu == "Deteksi Objek (YOLO)":
         if yolo_model is not None:
-            st.subheader("🎯 Deteksi Objek")
+            st.subheader("🎯 Hasil Deteksi Objek")
             try:
                 # Proses deteksi
                 results = yolo_model(img)
                 
-                # Mengambil gambar hasil deteksi (results[0].plot() adalah numpy array)
+                # Mengambil gambar hasil deteksi
                 result_img = results[0].plot() 
                 
                 # Tampilkan hasil
@@ -74,14 +78,14 @@ if uploaded_file is not None:
             except Exception as e:
                 st.error(f"Terjadi kesalahan saat deteksi objek: {e}")
         else:
-            st.warning("Model YOLO tidak dimuat. Tidak dapat menjalankan deteksi objek.")
+            st.warning("⚠️ Model YOLO tidak dimuat. Tidak dapat menjalankan deteksi objek.")
 
     # ==========================
     # Klasifikasi Gambar
     # ==========================
     elif menu == "Klasifikasi Gambar":
         if classifier is not None:
-            st.subheader("📊 Klasifikasi Gambar")
+            st.subheader("📊 Hasil Klasifikasi")
             try:
                 # 1. Preprocessing
                 img_resized = img.resize(TARGET_SIZE)
@@ -97,8 +101,8 @@ if uploaded_file is not None:
                 # 3. Tampilkan Hasil
                 predicted_class = CLASS_NAMES[class_index]
                 
-                st.success(f"✅ Hasil Prediksi: **{predicted_class}**")
-                st.metric("Tingkat Keyakinan (Confidence)", f"{confidence * 100:.2f} %")
+                st.success(f"✅ Klasifikasi: **{predicted_class}**")
+                st.metric("Tingkat Keyakinan", f"{confidence * 100:.2f} %")
                 
                 st.write("---")
                 st.write("Detail Probabilitas:")
@@ -107,4 +111,4 @@ if uploaded_file is not None:
             except Exception as e:
                 st.error(f"Terjadi kesalahan saat klasifikasi: {e}")
         else:
-            st.warning("Model Klasifikasi tidak dimuat. Tidak dapat menjalankan klasifikasi gambar.")
+            st.warning("⚠️ Model Klasifikasi tidak dimuat. Tidak dapat menjalankan klasifikasi gambar.")
