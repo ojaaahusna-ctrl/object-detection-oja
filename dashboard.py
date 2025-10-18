@@ -10,7 +10,6 @@ st.set_page_config(page_title="Image Classifier Dashboard", layout="wide")
 
 # =======================================================
 # Fungsi Pemuatan Model (Menggunakan Cache Streamlit)
-# =======================================================
 
 # Model 1: Hyena vs Cheetah (H5/TensorFlow)
 @st.cache_resource
@@ -40,10 +39,18 @@ HOTDOG_CLASSES = ['Not Hot Dog', 'Hot Dog'] # SESUAIKAN URUTANNYA DENGAN MODEL A
 # Fungsi Prediksi Model H5 (Hyena/Cheetah)
 # =======================================================
 def predict_h5(image, model):
-    # Preprocessing untuk Keras/TensorFlow (contoh ukuran 224x224)
+    # ...
     img = image.resize((224, 224))
-    img_array = np.array(img) / 255.0  # Normalisasi
-    img_array = np.expand_dims(img_array, axis=0)  # Tambah dimensi batch
+    
+    # Konversi ke NumPy Array dengan tipe float32
+    img_array = np.array(img, dtype=np.float32) / 255.0  # Normalisasi
+    
+    # Verifikasi dimensi (seharusnya (224, 224, 3) sebelum expand_dims)
+    if img_array.ndim == 2:
+        # Jika gambar grayscale, TensorFlow butuh 3 dimensi (tambahkan channel)
+        img_array = np.stack((img_array,)*3, axis=-1)
+        
+    img_array = np.expand_dims(img_array, axis=0)
     
     predictions = model.predict(img_array)
     predicted_index = np.argmax(predictions[0])
