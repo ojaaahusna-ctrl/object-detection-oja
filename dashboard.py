@@ -6,34 +6,47 @@ import numpy as np
 from PIL import Image
 import cv2
 
+# Definisikan nama kelas (GANTI INI dengan label kelas Anda yang sebenarnya)
+CLASS_NAMES = ["Kardus", "Kertas", "Plastik", "Kaleng", "Lain-lain"] 
+TARGET_SIZE = (224, 224) # Ukuran input model klasifikasi
+
 # ==========================
-# Load Models
+# Load Models (Menggunakan st.cache_resource)
 # ==========================
 @st.cache_resource
 def load_models():
-    # ... (bagian YOLO) ...
+    # Inisialisasi variabel di luar blok try untuk memastikan scope yang jelas
+    yolo_model = None
+    classifier = None
 
+    # --- Pemuatan Model YOLO ---
     try:
-        # Tambahkan allow_partial_load atau custom_objects
-        # Kita gunakan compile=False dan allow_partial_load=True sebagai coba-coba
+        yolo_model = YOLO("model/best.pt")
+    except Exception as e:
+        st.error(f"❌ Gagal memuat model YOLO (best.pt): {e}")
+
+    # --- Pemuatan Model Klasifikasi ---
+    try:
+        # Menggunakan custom_objects=None dan compile=False untuk mengatasi masalah 
+        # perbedaan versi TensorFlow (ValueError: Invalid dtype: tuple)
         classifier = tf.keras.models.load_model(
             "model/Raudhatul Husna_laporan2.h5", 
-            custom_objects=None, # Mengatasi masalah custom layer/fungsi
-            compile=False        # Mengatasi masalah compilation saat perbedaan versi
+            custom_objects=None,
+            compile=False
         )
     except Exception as e:
-        st.error(f"Gagal memuat model klasifikasi: {e}")
-        classifier = None
+        st.error(f"❌ Gagal memuat model Klasifikasi (Raudhatul Husna_laporan2.h5): {e}")
 
     return yolo_model, classifier
 
-
+# Panggil fungsi load_models() sekali di awal skrip
 yolo_model, classifier = load_models()
 
 # ==========================
-# UI
+# UI & Main Logic
 # ==========================
 st.title("🧠 Image Classification & Object Detection App")
+st.caption("Aplikasi ini menggunakan Model YOLO untuk Deteksi Objek dan Model Keras untuk Klasifikasi Gambar.")
 
 menu = st.sidebar.selectbox("Pilih Mode:", ["Deteksi Objek (YOLO)", "Klasifikasi Gambar"])
 
@@ -43,21 +56,55 @@ if uploaded_file is not None:
     img = Image.open(uploaded_file)
     st.image(img, caption="Gambar yang Diupload", use_container_width=True)
 
+    # ==========================
+    # Deteksi Objek (YOLO)
+    # ==========================
     if menu == "Deteksi Objek (YOLO)":
-        # Deteksi objek
-        results = yolo_model(img)
-        result_img = results[0].plot()  # hasil deteksi (gambar dengan box)
-        st.image(result_img, caption="Hasil Deteksi", use_container_width=True)
+        if yolo_model is not None:
+            st.subheader("🎯 Deteksi Objek")
+            try:
+                # Proses deteksi
+                results = yolo_model(img)
+                
+                # Mengambil gambar hasil deteksi (results[0].plot() adalah numpy array)
+                result_img = results[0].plot() 
+                
+                # Tampilkan hasil
+                st.image(result_img, caption="Hasil Deteksi Objek", use_container_width=True)
+            except Exception as e:
+                st.error(f"Terjadi kesalahan saat deteksi objek: {e}")
+        else:
+            st.warning("Model YOLO tidak dimuat. Tidak dapat menjalankan deteksi objek.")
 
+    # ==========================
+    # Klasifikasi Gambar
+    # ==========================
     elif menu == "Klasifikasi Gambar":
-        # Preprocessing
-        img_resized = img.resize((224, 224))  # sesuaikan ukuran dengan model kamu
-        img_array = image.img_to_array(img_resized)
-        img_array = np.expand_dims(img_array, axis=0)
-        img_array = img_array / 255.0
+        if classifier is not None:
+            st.subheader("📊 Klasifikasi Gambar")
+            try:
+                # 1. Preprocessing
+                img_resized = img.resize(TARGET_SIZE)
+                img_array = image.img_to_array(img_resized)
+                img_array = np.expand_dims(img_array, axis=0) # Tambah dimensi batch
+                img_array = img_array / 255.0 # Normalisasi
 
-        # Prediksi
-        prediction = classifier.predict(img_array)
-        class_index = np.argmax(prediction)
-        st.write("### Hasil Prediksi:", class_index)
-        st.write("Probabilitas:", np.max(prediction))
+                # 2. Prediksi
+                prediction = classifier.predict(img_array)
+                class_index = np.argmax(prediction)
+                confidence = np.max(prediction)
+                
+                # 3. Tampilkan Hasil
+                predicted_class = CLASS_NAMES[class_index]
+                
+                st.success(f"✅ Hasil Prediksi: **{predicted_class}**")
+                st.metric("Tingkat Keyakinan (Confidence)", f"{confidence * 100:.2f} %")
+                
+                st.write("---")
+                st.write("Detail Probabilitas:")
+                st.json({name: f"{prob * 100:.2f}%" for name, prob in zip(CLASS_NAMES, prediction[0])})
+
+            except Exception as e:
+                st.error(f"Terjadi kesalahan saat klasifikasi: {e}")
+        else:
+            st.warning("Model Klasifikasi tidak dimuat. Tidak dapat menjalankan klasifikasi gambar.")
