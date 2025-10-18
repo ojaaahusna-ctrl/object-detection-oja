@@ -1,7 +1,6 @@
-streamlit==1.36.0
+streamlit
+ultralytics
+tensorflow
+opencv-python
 pillow
 numpy
-h5py          
-opencv-python==4.9.0.80
-tensorflow==2.20.0
-ultralytics==8.2.76
