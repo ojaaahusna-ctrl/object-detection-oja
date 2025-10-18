@@ -15,14 +15,14 @@ st.set_page_config(page_title="Image Classifier Dashboard", layout="wide")
 # Model 1: Hyena vs Cheetah (H5/TensorFlow)
 @st.cache_resource
 def load_hyena_cheetah_model():
-    model = tf.keras.models.load_model('model/hyena_cheetah_model.h5')
+    model = tf.keras.models.load_model('model/Raudhatul Husna_laporan2.h5')
     return model
 
 # Model 2: Hot Dog vs Not Hot Dog (PT/PyTorch)
 @st.cache_resource
 def load_hotdog_model():
     # Model PyTorch umumnya dimuat menggunakan torch.load
-    model = torch.load('model/hotdog_nothotdog_model.pt', map_location=torch.device('cpu'))
+    model = torch.load('model/best.pt', map_location=torch.device('cpu'))
     model.eval() # Atur ke mode evaluasi/inferensi
     return model
 
