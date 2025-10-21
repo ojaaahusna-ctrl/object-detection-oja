@@ -1,9 +1,7 @@
 streamlit
-tensorflow
-numpy
-pandas
-opencv-python
-Pillow
-huggingface-hub
 torch
 torchvision
+pillow
+requests
+pandas
+ultralytics
