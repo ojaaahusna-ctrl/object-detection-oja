@@ -1,97 +1,95 @@
 import streamlit as st
 import torch
-from torchvision import models, transforms
+from ultralytics import YOLO
+import tensorflow as tf
+from huggingface_hub import hf_hub_download
 from PIL import Image
-import requests
+import numpy as np
+import io
 import os
 
-# ==========================
-# 1️⃣ Load YOLO model (local .pt)
-# ==========================
+# ======================================
+# 🔧 CONFIG
+# ======================================
+st.set_page_config(page_title="Object Detection & Classification Dashboard", page_icon="📸", layout="wide")
+
+st.title("📸 Object Detection & Classification Dashboard")
+st.markdown("Gunakan **YOLO (best.pt)** dan **ResNet50** bersama-sama.")
+st.divider()
+
+# ======================================
+# 🧩 Fungsi untuk memuat YOLO
+# ======================================
 @st.cache_resource
 def load_yolo_model():
     model_path = "model/best.pt"
     if not os.path.exists(model_path):
-        st.error("❌ File model YOLO tidak ditemukan di folder 'model/'. Pastikan best.pt sudah ada.")
+        st.error("⚠️ File YOLO model (best.pt) tidak ditemukan di folder 'model/'.")
         return None
-    model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path, force_reload=False)
+    model = YOLO(model_path)
     return model
 
-
-# ==========================
-# 2️⃣ Load ResNet50 model (pretrained)
-# ==========================
+# ======================================
+# 🧩 Fungsi untuk memuat ResNet50 dari Hugging Face
+# ======================================
 @st.cache_resource
-def load_resnet50():
-    model = models.resnet50(pretrained=True)
-    model.eval()
-    return model
+def load_resnet50_from_hf():
+    MODEL_ID = "ojahusnaa/resnet50-object-model"
+    try:
+        local_dir = hf_hub_download(repo_id=MODEL_ID, filename="ResNet50_Universal", repo_type="model")
+        model = tf.keras.models.load_model(local_dir)
+        return model
+    except Exception as e:
+        st.error(f"Gagal memuat model ResNet50 dari Hugging Face: {e}")
+        return None
 
+# ======================================
+# 🧩 Fungsi preprocessing ResNet50
+# ======================================
+def preprocess_resnet_image(image):
+    img = image.resize((224, 224))
+    img_array = np.expand_dims(np.array(img) / 255.0, axis=0)
+    return img_array
 
-# ==========================
-# 3️⃣ Fungsi prediksi YOLO
-# ==========================
-def predict_yolo(model, image):
-    results = model(image)
-    return results.pandas().xyxy[0]
-
-
-# ==========================
-# 4️⃣ Fungsi prediksi ResNet50
-# ==========================
+# ======================================
+# 🧩 Fungsi prediksi ResNet50
+# ======================================
 def predict_resnet(model, image):
-    preprocess = transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
-        transforms.ToTensor(),
-        transforms.Normalize(
-            mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225]
-        )
-    ])
-    img_tensor = preprocess(image).unsqueeze(0)
-    with torch.no_grad():
-        outputs = model(img_tensor)
-    probs = torch.nn.functional.softmax(outputs[0], dim=0)
-    class_idx = torch.argmax(probs).item()
+    img_array = preprocess_resnet_image(image)
+    preds = model.predict(img_array)
+    class_idx = np.argmax(preds)
+    confidence = np.max(preds)
+    return class_idx, confidence
 
-    # Load labels
-    labels_url = "https://raw.githubusercontent.com/pytorch/hub/master/imagenet_classes.txt"
-    labels = requests.get(labels_url).text.splitlines()
-    label = labels[class_idx]
-    confidence = probs[class_idx].item()
-    return label, confidence
+# ======================================
+# 📤 Upload Gambar
+# ======================================
+st.subheader("Unggah gambar untuk prediksi")
+uploaded_file = st.file_uploader("Drag and drop file here", type=["jpg", "jpeg", "png"])
 
+if uploaded_file:
+    image = Image.open(uploaded_file).convert("RGB")
+    st.image(image, caption="Gambar yang diunggah", use_container_width=True)
 
-# ==========================
-# 5️⃣ Dashboard Streamlit
-# ==========================
-st.title("📸 Object Detection & Classification Dashboard")
-st.write("Gunakan YOLO (best.pt) dan ResNet50 bersama-sama.")
-
-uploaded_image = st.file_uploader("Unggah gambar untuk prediksi", type=["jpg", "png", "jpeg"])
-
-if uploaded_image:
-    image = Image.open(uploaded_image).convert("RGB")
-    st.image(image, caption="Gambar diunggah", use_container_width=True)
-
-    st.write("### 🔍 Hasil Prediksi")
+    st.subheader("🔍 Hasil Prediksi")
 
     # Load kedua model
     yolo_model = load_yolo_model()
-    resnet_model = load_resnet50()
+    resnet_model = load_resnet50_from_hf()
 
-    if yolo_model:
-        st.subheader("Deteksi Objek (YOLO)")
-        yolo_results = predict_yolo(yolo_model, image)
-        st.dataframe(yolo_results)
+    if yolo_model is None or resnet_model is None:
+        st.stop()
 
-    st.subheader("Klasifikasi (ResNet50)")
-    label, confidence = predict_resnet(resnet_model, image)
-    st.success(f"Prediksi: **{label}** dengan keyakinan {confidence:.2f}")
+    # YOLO Prediction
+    st.info("🚀 Menjalankan deteksi YOLO...")
+    results = yolo_model.predict(image, conf=0.4, imgsz=640)
+    yolo_img = results[0].plot()  # hasil bounding box
+    st.image(yolo_img, caption="Hasil Deteksi YOLO", use_container_width=True)
 
+    # ResNet50 Prediction
+    st.info("🧠 Menjalankan klasifikasi ResNet50...")
+    class_idx, confidence = predict_resnet(resnet_model, image)
+    st.success(f"✅ Kelas Prediksi ResNet50: {class_idx} (Confidence: {confidence:.2f})")
 
-# ==========================
-# 6️⃣ Cara Jalankan (Terminal)
-# ==========================
-# streamlit run dashboard.py
+else:
+    st.warning("📂 Silakan unggah gambar terlebih dahulu untuk melakukan prediksi.")
