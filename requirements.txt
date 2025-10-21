@@ -5,3 +5,5 @@ pandas
 opencv-python
 Pillow
 huggingface-hub
+torch
+torchvision
