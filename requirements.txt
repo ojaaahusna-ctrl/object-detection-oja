@@ -1,9 +1,7 @@
 streamlit
-torch
-torchvision
-ultralytics
 tensorflow
-huggingface_hub
+ultralytics
 pillow
+opencv-python-headless
 numpy
-seaborn
+huggingface_hub
