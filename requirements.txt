@@ -1,6 +1,7 @@
 streamlit
 tensorflow
-ultralytics
-pillow
-opencv-python-headless
 numpy
+pandas
+opencv-python
+Pillow
+huggingface-hub
