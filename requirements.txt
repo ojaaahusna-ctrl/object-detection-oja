@@ -1,7 +1,9 @@
 streamlit
 torch
 torchvision
-pillow
-requests
-pandas
 ultralytics
+tensorflow
+huggingface_hub
+pillow
+numpy
+seaborn
